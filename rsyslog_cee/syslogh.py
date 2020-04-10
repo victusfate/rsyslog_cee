@@ -94,11 +94,11 @@ class Syslogh:
   INFO:    int
   DEBUG:   int
 
-  def openlog(identity: str, flags: Options, facility: Facility):
+  def openlog(self,identity: str, flags: Options, facility: Facility):
     return
 
-  def syslog(priority: Priority, message: str):
+  def syslog(self,priority: Priority, message: str):
     return
 
-  def closelog():
+  def closelog(self):
     return

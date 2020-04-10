@@ -31,7 +31,10 @@ class TimeKeeper:
 
   def range(self) -> float:
     if self._range is None:
-      self._range = self._stop > 0 ? self._stop - self._start : TimeKeeper.getTime() - self._start
+      if self._stop > 0:
+        self._range = self._stop - self._start
+      else:
+        self._range = TimeKeeper.getTime() - self._start
     return self._range
 
   def stop(self) -> float:

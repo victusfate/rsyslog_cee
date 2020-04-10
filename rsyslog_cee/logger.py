@@ -2,6 +2,10 @@ import hashlib
 import urllib
 import syslogh
 import timer
+import datetime
+import copy
+import functools
+
 from typing import Optional
 from urllib.parse import urlparse
 
@@ -82,295 +86,275 @@ class Logger:
       
       oUrl = urlparse(oOptions.request.url or '')
 
-      if oUrl.query['--t']:
+      if '--t' in oUrl.query:
         self.thread_hash = str(oUrl.query['--t'])
 
-      if (oUrl.query['--p']) {
-          self.parent_hash = <string> oUrl.query['--p'];
-      }
+      if '--p' in oUrl.query:
+        self.parent_hash = str(oUrl.query['--p'])
 
-      self.addRequestContext(oOptions.request);
-    } else {
-        if (oOptions.thread_hash) {
-            self.thread_hash = oOptions.thread_hash;
-        }
+      self.addRequestContext(oOptions.request)
+    else:
+      if oOptions.thread_hash:
+        self.thread_hash = oOptions.thread_hash
 
-        if (oOptions.parent_hash) {
-            self.parent_hash = oOptions.parent_hash;
-        }
-    }
+      if oOptions.parent_hash:
+        self.parent_hash = oOptions.parent_hash
 
-    self.metrics = new Timer();
-    self.metrics.start('_REQUEST');
+    self.metrics = Timer()
+    self.metrics.start('_REQUEST')
 
-    self.start_timestamp = new Date().toISOString();
+    self.start_timestamp = datetime.now(timezone.utc).isoformat()
 
-    if (oOptions.purpose) {
-        self.setPurpose(oOptions.purpose);
-    }
+    if oOptions.purpose:
+      self.setPurpose(oOptions.purpose)
 
-  addConsole() {
-      self.console = true;
-  }
+  def addConsole(self):
+    self.console = True
 
-  removeConsole() {
-      self.console = false;
-  }
+  def removeConsole(self):
+    self.console = False
 
-  addSyslog() {
-      self.syslog = true;
-      Syslogh.openlog(self.service, Syslogh.PID, Syslogh.LOCAL7)
-  }
+  def addSyslog(self):
+    self.syslog = True;
+    Syslogh.openlog(self.service, Syslogh.PID, Syslogh.LOCAL7)
 
-  removeSyslog() {
-      self.syslog = false;
-      Syslogh.closelog();
-  }
+  def removeSyslog(self):
+    self.syslog = False
+    Syslogh.closelog()
 
-  getTraceTags(): TraceTags {
-      return {
+  def getTraceTags(self) -> TraceTags:
+      return TraceTags(
           '--t': self.thread_hash,
           '--p': self.request_hash
-      };
-  }
+      )
 
-  justAddContext(mContext: any) {
-      self._indexedLogRewriter('', mContext);
-  }
+  def justAddContext(self,mContext):
+    self._indexedLogRewriter('', mContext)
 
-  addRequestContext(oRequest: http.IncomingMessage) {
-      self._indexedLogRewriter('', {
-          '#request': {
-              headers:    JSON.stringify(oRequest.headers),
-              host:       oRequest.headers.host,
-              method:     oRequest.method,
-              parameters: {
-                  path:  null,
-                  post:  null,
-                  query: null
-              },
-              path:       null,
-              referrer:   oRequest.headers.referer,
-              uri:        oRequest.url
-          },
-          '#user': {
-              agent: oRequest.headers['user-agent'],
-              ip:    oRequest.connection.remoteAddress
-          }
-      });
-  }
+  # TODO find a format for oRequest that will work  here, maybe the requests module 
+  # for now assume a Bottle request object TBD https://bottlepy.org/docs/dev/api.html#bottle.BaseRequest
+  def addRequestContext(self,oRequest):
+    self._indexedLogRewriter('', {
+        '#request': {
+            'headers':    JSON.stringify(oRequest.headers),
+            'host':       oRequest.headers['host'],
+            'method':     oRequest.method,
+            'parameters': {
+                'path':  null,
+                'post':  null,
+                'query': null
+            },
+            'path':       null,
+            'referrer':   oRequest.headers['referer'],
+            'uri':        oRequest.url
+        },
+        '#user': {
+            'agent': oRequest.headers['user-agent'],
+            'ip':    oRequest.remote_addr
+        }
+    })
 
-  addTag(tag: string, value: any) {
-      if (!self.tags) {
-          self.tags = {};
+  def addTag(self,tag: str, value):
+    if not self.tags:
+      self.tags = {}
+    self.tags[tag] = value
+
+  def setProcessIsError(self,is_error: bool):
+    self.is_error = is_error
+
+  def setPurpose(self,purpose: str):
+    self.purpose = purpose
+
+  @staticmethod
+  def _objectFromPath(oObject, sPath: str, mValue):
+    # TODO convert from js to python -> not sure what this is doing
+    # return sPath.split('.').reduce(
+    #   (oValue: {[index: string]: any}, sKey: string, iIndex: number, aSplit: any) => 
+    #     oValue[sKey] = iIndex === aSplit.length - 1 ? mValue : {}, oObject);
+
+    aPath = sPath.split('.')
+    for iIndex in range(len(aPath)):
+      sKey = aPath[iIndex]
+      if iIndex = len(aPath) - 1:
+        oObject[sKey] = mValue
+    return oObject
+    
+
+  @staticmethod
+  def _syslogFormatter(oMessage) -> str:
+    oMessageOut = {}
+    for sKey,mValue in oMessage.items:
+      try:
+        data = mValue.decode('base64')
+        oMessageOut[sKey] = data
+      except (UnicodeDecodeError, AttributeError):
+        oMessageOut[sKey] = mValue
+
+    return '@cee: ' + json.dumps(oMessageOut)
+
+  def _indexedLogRewriter(sMessage: str, oMeta=None):
+
+    oClone = copy.copy(oMeta) if oMeta else {}
+
+    oOutput = {
+      '--action': sMessage
+    }
+
+    if oClone:
+      if 'action'in oClone:
+        oOutput['--action'] = oClone['action']
+        del oClone['action']
+
+      self.index += 1
+
+      oOutput['--i'] = self.index
+      oOutput['--r'] = self.request_hash
+      oOutput['--t'] = self.thread_hash
+
+      if self.parent_hash:
+        oOutput['--p'] = self.parent_hash
+
+      # Move all "--*" items to root
+      for sKey in oClone.keys():
+        if sKey.index('--') == 0:
+          oOutput[sKey] = oClone[sKey]
+          del oClone[sKey]
+
+        if sKey.index('#') == 0:
+          # TODO convert regex to python
+          # sStrippedKey = sKey.replace(/^#+/, '')
+          oClone[sStrippedKey] = oClone[sKey]
+          del oClone[sKey]
+
+          if ['str', 'float', 'bool'].find(type(oClone[sStrippedKey])) > -1:
+            self.Globals[sStrippedKey] = oClone[sStrippedKey]
+          else:
+            oTemp = copy.copy(self.Globals[sStrippedKey])
+            oTemp.update(oClone[sStrippedKey])
+            self.Globals[sStrippedKey] = oTemp
+
+      if len(oClone) > 0:
+        Logger._objectFromPath(oOutput, oOutput['--action'], oClone)
+
+    return oOutput
+
+  def log(iSeverity: int, sAction: str, oMeta):
+    oParsed  = Logger.JSONifyErrors(oMeta)
+    oMessage = self._indexedLogRewriter(sAction, oParsed)
+    sMessage = Logger._syslogFormatter(oMessage)
+
+    if self.syslog:
+      Syslogh.syslog(iSeverity, sMessage);
+
+    # TODO need to test this
+    if self.console:
+      sMessage = json.dumps(oMessage,sort_keys=True,indent=4, separators=(',', ': '))
+      switcher = {
+          Syslogh.DEBUG:   console.debug('DEBUG',   sMessage),
+          Syslogh.INFO:    console.info( 'INFO',    sMessage),
+          Syslogh.NOTICE:  console.log(  'NOTICE',  sMessage),
+          Syslogh.WARNING: console.warn( 'WARNING', sMessage),
+          Syslogh.ERR:     console.error('ERR',     sMessage),
+          Syslogh.CRIT:    console.error('CRIT',    sMessage),
+          Syslogh.ALERT:   console.error('ALERT',   sMessage),
+          Syslogh.EMERG:   console.error('EMERG',   sMessage)
       }
+      func = switcher.get(iSeverity,lambda :'Invalid')
+      func() 
 
-      self.tags[tag] = value;
-  }
+  #  
+  # 
+  # @param sOverrideName
+  # @returns {{"--ms": *, "--i": number, "--summary": boolean, "--span": {_format: string, version: number, start_timestamp: string, end_timestamp: string, service: string, indicator: boolean, metrics: string, error: boolean, name: string, tags: {}, context: {}}}}
+  # 
+  def summary(sOverrideName: str = 'Summary'):
+    self.index += 1
+    iTimer = self.metrics.stop('_REQUEST')
+    oSummary = {
+        '--ms':          iTimer,
+        '--i':           self.index,
+        '--summary':     true,
+        '--span': {
+            '_format':         'SSFSpan.DashedTrace',
+            'version':         1,
+            'start_timestamp': self.start_timestamp,
+            'end_timestamp':   datetime.now(timezone.utc).isoformat(),
+            'service':         self.service,
+            'metrics':         JSON.stringify(self.metrics.getAll()),
+            'error':           self.is_error,
+            'name':            self.purpose,
+            'tags':            self.tags,
+            'context':         self.Globals
+        }
+    }
 
-  setProcessIsError(is_error: boolean) {
-      self.is_error = is_error;
-  }
+    self.log(Syslogh.INFO, '.'.join([self.service, sOverrideName]), oSummary)
+    return oSummary
 
-  setPurpose(purpose: string) {
-      self.purpose = purpose;
-  }
+  # 
+  # 
+  # @param {object} oMeta
+  # @return {string}
+  #
+  @staticmethod
+  def JSONifyErrors(oMeta):
+    if oMeta:
+      let bFoundErrors = False
 
-  static _objectFromPath (oObject: any, sPath: string, mValue: any) {
-      sPath.split('.').reduce((oValue: {[index: string]: any}, sKey: string, iIndex: number, aSplit: any) => oValue[sKey] = iIndex === aSplit.length - 1 ? mValue : {}, oObject);
-  };
+      # TODO start here
+      # maybe look https://docs.python.org/3/library/traceback.html
 
-  static _syslogFormatter (oMessage: any): string {
-      return '@cee: ' + JSON.stringify(oMessage, (sKey, mValue) => {
-          return mValue instanceof Buffer
-              ? mValue.toString('base64')
-              : mValue;
-      });
-  };
 
-  _indexedLogRewriter = (sMessage: string, oMeta?: any) => {
-      let oClone = oMeta ? Object.assign({}, oMeta) : {};
+      # sMeta = JSON.stringify(oMeta, (sKey: string , mValue: any) => {
+      #     if (util.types && util.types.isNativeError ? util.types.isNativeError(mValue) : util.isError(mValue)) {
+      #         bFoundErrors = true;
+      #         let oError: {[index: string]: any} = {};
+      #         Object.getOwnPropertyNames(mValue).forEach(sKey => {
+      #             if (sKey === 'stack') {
+      #                 oError[sKey] = mValue[sKey].split('\n');
+      #             } else {
+      #                 oError[sKey] = mValue[sKey];
+      #             }
+      #         });
+      #         return oError;
+      #     }
+      #     return mValue;
+      # });
 
-      let oOutput: any = {
-          '--action': sMessage
-      };
+      if bFoundErrors and sMeta:
+        return JSON.parse(sMeta)
 
-      if (oClone) {
-          if (oClone.action) {
-              oOutput['--action'] = oClone.action;
-              delete oClone.action;
-          }
+    return oMeta
 
-          self.index++;
+  def d(self,sAction: string, oMeta):
+    self.log(Syslogh.DEBUG, sAction, oMeta)
 
-          oOutput['--i'] = self.index;
-          oOutput['--r'] = self.request_hash;
-          oOutput['--t'] = self.thread_hash;
-
-          if (self.parent_hash) {
-              oOutput['--p'] = self.parent_hash;
-          }
-
-          // Move all "--*" items to root
-          Object.keys(oClone).map(sKey => {
-              if (sKey.indexOf('--') === 0) {
-                  oOutput[sKey] = oClone[sKey];
-                  delete oClone[sKey];
-              }
-
-              if (sKey.indexOf('#') === 0) {
-                  const sStrippedKey = sKey.replace(/^#+/, '');
-                  oClone[sStrippedKey] = oClone[sKey];
-                  delete oClone[sKey];
-
-                  if (['string', 'number', 'boolean'].indexOf(typeof oClone[sStrippedKey]) > -1) {
-                      self.Globals[sStrippedKey] = oClone[sStrippedKey];
-                  } else {
-                      self.Globals[sStrippedKey] = Object.assign({}, self.Globals[sStrippedKey], oClone[sStrippedKey]);
-                  }
-              }
-          });
-
-          if (Object.keys(oClone).length > 0) {
-              Logger._objectFromPath(oOutput, oOutput['--action'], oClone);
-          }
-      }
-
-      return oOutput;
-  };
-
-  private log(iSeverity: number, sAction: string, oMeta?: any) {
-      const oParsed  = Logger.JSONifyErrors(oMeta);
-      const oMessage = self._indexedLogRewriter(sAction, oParsed);
-      const sMessage = Logger._syslogFormatter(oMessage);
-
-      if (self.syslog) {
-          Syslogh.syslog(iSeverity, sMessage);
-      }
-
-      if (self.console) {
-          const sMessage = JSON.stringify(oMessage, null, '   ');
-          switch (iSeverity) {
-              case Syslogh.DEBUG:   console.debug('DEBUG',   sMessage); break;
-              case Syslogh.INFO:    console.info( 'INFO',    sMessage); break;
-              case Syslogh.NOTICE:  console.log(  'NOTICE',  sMessage); break;
-              case Syslogh.WARNING: console.warn( 'WARNING', sMessage); break;
-              case Syslogh.ERR:     console.error('ERR',     sMessage); break;
-              case Syslogh.CRIT:    console.error('CRIT',    sMessage); break;
-              case Syslogh.ALERT:   console.error('ALERT',   sMessage); break;
-              case Syslogh.EMERG:   console.error('EMERG',   sMessage); break;
-          }
-      }
-  }
-
-  /**
-    *
-    * @param sOverrideName
-    * @returns {{"--ms": *, "--i": number, "--summary": boolean, "--span": {_format: string, version: number, start_timestamp: string, end_timestamp: string, service: string, indicator: boolean, metrics: string, error: boolean, name: string, tags: {}, context: {}}}}
-    */
-  summary(sOverrideName: string = 'Summary') {
-      self.index++;
-      const iTimer = self.metrics.stop('_REQUEST');
-      const oSummary = {
-          '--ms':          iTimer,
-          '--i':           self.index,
-          '--summary':     true,
-          '--span': {
-              _format:         'SSFSpan.DashedTrace',
-              version:         1,
-              start_timestamp: self.start_timestamp,
-              end_timestamp:   new Date().toISOString(),
-              service:         self.service,
-              metrics:         JSON.stringify(self.metrics.getAll()),
-              error:           self.is_error,
-              name:            self.purpose,
-              tags:            self.tags,
-              context:         self.Globals
-          }
-      };
-
-      self.log(Syslogh.INFO, [self.service, sOverrideName].join('.'), oSummary);
-
-      return oSummary;
-  }
-
-  /**
-    *
-    * @param {object} oMeta
-    * @return {string}
-    */
-  static JSONifyErrors(oMeta: object) {
-      if (oMeta) {
-          let bFoundErrors = false;
-
-          // https://stackoverflow.com/a/18391400/14651
-          const sMeta = JSON.stringify(oMeta, (sKey: string , mValue: any) => {
-              if (util.types && util.types.isNativeError ? util.types.isNativeError(mValue) : util.isError(mValue)) {
-                  bFoundErrors = true;
-                  let oError: {[index: string]: any} = {};
-
-                  Object.getOwnPropertyNames(mValue).forEach(sKey => {
-                      if (sKey === 'stack') {
-                          oError[sKey] = mValue[sKey].split('\n');
-                      } else {
-                          oError[sKey] = mValue[sKey];
-                      }
-                  });
-
-                  return oError;
-              }
-
-              return mValue;
-          });
-
-          if (bFoundErrors && sMeta) {
-              return JSON.parse(sMeta);
-          }
-      }
-
-      return oMeta;
-  }
-
-  d(sAction: string, oMeta?: any) {
-      self.log(Syslogh.DEBUG, sAction, oMeta);
-  }
-
-  i(sAction: string, oMeta?: any) {
-      self.log(Syslogh.INFO, sAction, oMeta);
-  }
-
-  n(sAction: string, oMeta?: any) {
-      self.log(Syslogh.NOTICE, sAction, oMeta);
-  }
-
-  w(sAction: string, oMeta?: any) {
-      self.log(Syslogh.WARNING, sAction, oMeta);
-  }
-
-  e(sAction: string, oMeta?: any) {
-      self.log(Syslogh.ERR, sAction, oMeta);
-  }
-
-  c(sAction: string, oMeta?: any) {
-      self.log(Syslogh.CRIT, sAction, oMeta);
-  }
-
-  a(sAction: string, oMeta?: any) {
-      self.log(Syslogh.ALERT, sAction, oMeta);
-  }
-
-  em(sAction: string, oMeta?: any) {
-      self.log(Syslogh.EMERG, sAction, oMeta);
-  }
-
-  dt(oTime: TimeKeeper, sActionOverride?: string) {
-      self.d(sActionOverride ? sActionOverride : oTime.label(), {'--ms': oTime.stop()});
-  }
+  def i(self,sAction: string, oMeta):
+    self.log(Syslogh.INFO, sAction, oMeta);
   
-  startTimer(sLabel: string): TimeKeeper {
-      return self.metrics.start(sLabel);
-  }
+  def n(self,sAction: string, oMeta):
+    self.log(Syslogh.NOTICE, sAction, oMeta)
 
-  stopTimer(sLabel: string): number {
-      return self.metrics.stop(sLabel);
-  }
+  def w(self,sAction: string, oMeta):
+    self.log(Syslogh.WARNING, sAction, oMeta)
+
+  def e(self,sAction: str, oMeta):
+    self.log(Syslogh.ERR, sAction, oMeta)
+
+  def c(self,sAction: str, oMeta):
+    self.log(Syslogh.CRIT, sAction, oMeta)
+
+  def a(self,sAction: str, oMeta):
+    self.log(Syslogh.ALERT, sAction, oMeta)
+
+  def em(self,sAction: str, oMeta):
+    self.log(Syslogh.EMERG, sAction, oMeta)
+
+  def dt(self,oTime: TimeKeeper, sActionOverride: Optional[str]):
+    self.d(sActionOverride if sActionOverride else oTime.label(), {'--ms': oTime.stop()})
+  
+  def startTimer(self,sLabel: str) -> TimeKeeper:
+    return self.metrics.start(sLabel)
+
+  def stopTimer(self,sLabel: str) -> float:
+    return self.metrics.stop(sLabel)
