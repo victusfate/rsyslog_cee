@@ -1,0 +1,13 @@
+.DS_Store
+model
+*.pyc
+__pycache__
+*.db
+jobs
+wals_ml_engine.egg-info
+build/
+dist
+airflow/deploy/config/settings.yaml
+airflow/deploy/deployment-settings.yaml
+data/
+ncf_recommend/bin/config_welco.json
