@@ -1,7 +1,7 @@
 
 import time
 import rsyslog_cee
-from rsyslog_cee import Logger,LoggerOptions
+from rsyslog_cee.logger import Logger,LoggerOptions
 
 oLogger = Logger(
     LoggerOptions(

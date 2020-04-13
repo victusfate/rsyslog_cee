@@ -4,10 +4,7 @@ model
 __pycache__
 *.db
 jobs
-wals_ml_engine.egg-info
+rsyslog_cee.egg-info
 build/
 dist
-airflow/deploy/config/settings.yaml
-airflow/deploy/deployment-settings.yaml
 data/
-ncf_recommend/bin/config_welco.json

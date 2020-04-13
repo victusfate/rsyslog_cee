@@ -1,8 +1,9 @@
+import json
 import hashlib
 import urllib
-import syslogh
-import timer
+import syslog
 import datetime
+from .timer import Timer,TimeKeeper
 import copy
 import functools
 
@@ -24,7 +25,7 @@ class LoggerOptions:
   console:        Optional[bool]
   syslog:         Optional[bool]
 
-  request:        Optional[request]
+  request:        None
 
   def __init__(self,service,purpose=None,thread_hash=None,parent_hash=None,console=None,syslog=None,request=None):
     self.service     = service
@@ -37,8 +38,8 @@ class LoggerOptions:
 
 
 class TraceTags:
-  '--t': Optional[str]
-  '--p': Optional[str]
+  thread_hash: Optional[str]
+  parent_hash: Optional[str]
 
 
 
@@ -57,7 +58,7 @@ class Logger:
   purpose:         Optional[str]
 
   Globals = {}        #  [index: string]: any
-  tags: Optional[{}]  # [index: string]: any
+  tags: {}            # [index: string]: any
 
   def __init__(self,oOptions: LoggerOptions):
     self.Globals    = {}
@@ -77,8 +78,9 @@ class Logger:
     if oOptions.syslog:
       self.addSyslog()
 
-    self.request_hash = hashlib.sha1('' + TimeKeeper.getTime()).hexdigest()[0:8];
+    self.request_hash = hashlib.sha1(str(TimeKeeper.getTime()).encode('utf-8')).hexdigest()[0:8]
     self.thread_hash  = self.request_hash
+    self.parent_hash  = None
 
     if oOptions.request:
       if oOptions.request.headers and oOptions.request.headers['x-request-id']:
@@ -103,7 +105,7 @@ class Logger:
     self.metrics = Timer()
     self.metrics.start('_REQUEST')
 
-    self.start_timestamp = datetime.now(timezone.utc).isoformat()
+    self.start_timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
     if oOptions.purpose:
       self.setPurpose(oOptions.purpose)
@@ -116,16 +118,16 @@ class Logger:
 
   def addSyslog(self):
     self.syslog = True;
-    Syslogh.openlog(self.service, Syslogh.PID, Syslogh.LOCAL7)
+    syslog.openlog(self.service, syslog.LOG_PID, syslog.LOG_LOCAL7)
 
   def removeSyslog(self):
     self.syslog = False
-    Syslogh.closelog()
+    syslog.closelog()
 
   def getTraceTags(self) -> TraceTags:
       return TraceTags(
-          '--t': self.thread_hash,
-          '--p': self.request_hash
+          thread_hash=self.thread_hash,
+          parent_hash=self.request_hash
       )
 
   def justAddContext(self,mContext):
@@ -140,11 +142,11 @@ class Logger:
             'host':       oRequest.headers['host'],
             'method':     oRequest.method,
             'parameters': {
-                'path':  null,
-                'post':  null,
-                'query': null
+                'path':  None,
+                'post':  None,
+                'query': None,
             },
-            'path':       null,
+            'path':       None,
             'referrer':   oRequest.headers['referer'],
             'uri':        oRequest.url
         },
@@ -175,7 +177,7 @@ class Logger:
     aPath = sPath.split('.')
     for iIndex in range(len(aPath)):
       sKey = aPath[iIndex]
-      if iIndex = len(aPath) - 1:
+      if iIndex == len(aPath) - 1:
         oObject[sKey] = mValue
     return oObject
     
@@ -192,7 +194,7 @@ class Logger:
 
     return '@cee: ' + json.dumps(oMessageOut)
 
-  def _indexedLogRewriter(sMessage: str, oMeta=None):
+  def _indexedLogRewriter(self,sMessage: str, oMeta=None):
 
     oClone = copy.copy(oMeta) if oMeta else {}
 
@@ -238,26 +240,26 @@ class Logger:
 
     return oOutput
 
-  def log(iSeverity: int, sAction: str, oMeta):
+  def log(self,iSeverity: int, sAction: str, oMeta):
     oParsed  = Logger.JSONifyErrors(oMeta)
-    oMessage = self._indexedLogRewriter(sAction, oParsed)
+    oMessage = self._indexedLogRewriter(sAction,oParsed)
     sMessage = Logger._syslogFormatter(oMessage)
 
     if self.syslog:
-      Syslogh.syslog(iSeverity, sMessage);
+      syslog.syslog(iSeverity, sMessage);
 
     # TODO need to test this
     if self.console:
       sMessage = json.dumps(oMessage,sort_keys=True,indent=4, separators=(',', ': '))
       switcher = {
-          Syslogh.DEBUG:   console.debug('DEBUG',   sMessage),
-          Syslogh.INFO:    console.info( 'INFO',    sMessage),
-          Syslogh.NOTICE:  console.log(  'NOTICE',  sMessage),
-          Syslogh.WARNING: console.warn( 'WARNING', sMessage),
-          Syslogh.ERR:     console.error('ERR',     sMessage),
-          Syslogh.CRIT:    console.error('CRIT',    sMessage),
-          Syslogh.ALERT:   console.error('ALERT',   sMessage),
-          Syslogh.EMERG:   console.error('EMERG',   sMessage)
+          syslog.LOG_DEBUG:   print('DEBUG',   sMessage),
+          syslog.LOG_INFO:    print( 'INFO',    sMessage),
+          syslog.LOG_NOTICE:  print(  'NOTICE',  sMessage),
+          syslog.LOG_WARNING: print( 'WARNING', sMessage),
+          syslog.LOG_ERR:     print('ERR',     sMessage),
+          syslog.LOG_CRIT:    print('CRIT',    sMessage),
+          syslog.LOG_ALERT:   print('ALERT',   sMessage),
+          syslog.LOG_EMERG:   print('EMERG',   sMessage)
       }
       func = switcher.get(iSeverity,lambda :'Invalid')
       func() 
@@ -273,7 +275,7 @@ class Logger:
     oSummary = {
         '--ms':          iTimer,
         '--i':           self.index,
-        '--summary':     true,
+        '--summary':     True,
         '--span': {
             '_format':         'SSFSpan.DashedTrace',
             'version':         1,
@@ -288,7 +290,7 @@ class Logger:
         }
     }
 
-    self.log(Syslogh.INFO, '.'.join([self.service, sOverrideName]), oSummary)
+    self.log(syslog.LOG_INFO, '.'.join([self.service, sOverrideName]), oSummary)
     return oSummary
 
   # 
@@ -298,57 +300,57 @@ class Logger:
   #
   @staticmethod
   def JSONifyErrors(oMeta):
-    if oMeta:
-      let bFoundErrors = False
+    # if oMeta:
+    #   bFoundErrors = False
 
-      # TODO start here
-      # maybe look https://docs.python.org/3/library/traceback.html
+    #   TODO start here
+    #   maybe look https://docs.python.org/3/library/traceback.html
 
 
-      # sMeta = JSON.stringify(oMeta, (sKey: string , mValue: any) => {
-      #     if (util.types && util.types.isNativeError ? util.types.isNativeError(mValue) : util.isError(mValue)) {
-      #         bFoundErrors = true;
-      #         let oError: {[index: string]: any} = {};
-      #         Object.getOwnPropertyNames(mValue).forEach(sKey => {
-      #             if (sKey === 'stack') {
-      #                 oError[sKey] = mValue[sKey].split('\n');
-      #             } else {
-      #                 oError[sKey] = mValue[sKey];
-      #             }
-      #         });
-      #         return oError;
-      #     }
-      #     return mValue;
-      # });
+    #   # sMeta = JSON.stringify(oMeta, (sKey: string , mValue: any) => {
+    #   #     if (util.types && util.types.isNativeError ? util.types.isNativeError(mValue) : util.isError(mValue)) {
+    #   #         bFoundErrors = true;
+    #   #         let oError: {[index: string]: any} = {};
+    #   #         Object.getOwnPropertyNames(mValue).forEach(sKey => {
+    #   #             if (sKey === 'stack') {
+    #   #                 oError[sKey] = mValue[sKey].split('\n');
+    #   #             } else {
+    #   #                 oError[sKey] = mValue[sKey];
+    #   #             }
+    #   #         });
+    #   #         return oError;
+    #   #     }
+    #   #     return mValue;
+    #   # });
 
-      if bFoundErrors and sMeta:
-        return JSON.parse(sMeta)
+    #   if bFoundErrors and sMeta:
+    #     return JSON.parse(sMeta)
 
     return oMeta
 
-  def d(self,sAction: string, oMeta):
-    self.log(Syslogh.DEBUG, sAction, oMeta)
+  def d(self,sAction: str, oMeta):
+    self.log(syslog.LOG_DEBUG, sAction, oMeta)
 
-  def i(self,sAction: string, oMeta):
-    self.log(Syslogh.INFO, sAction, oMeta);
+  def i(self,sAction: str, oMeta):
+    self.log(syslog.LOG_INFO, sAction, oMeta);
   
-  def n(self,sAction: string, oMeta):
-    self.log(Syslogh.NOTICE, sAction, oMeta)
+  def n(self,sAction: str, oMeta):
+    self.log(syslog.LOG_NOTICE, sAction, oMeta)
 
-  def w(self,sAction: string, oMeta):
-    self.log(Syslogh.WARNING, sAction, oMeta)
+  def w(self,sAction: str, oMeta):
+    self.log(syslog.LOG_WARNING, sAction, oMeta)
 
   def e(self,sAction: str, oMeta):
-    self.log(Syslogh.ERR, sAction, oMeta)
+    self.log(syslog.LOG_ERR, sAction, oMeta)
 
   def c(self,sAction: str, oMeta):
-    self.log(Syslogh.CRIT, sAction, oMeta)
+    self.log(syslog.LOG_CRIT, sAction, oMeta)
 
   def a(self,sAction: str, oMeta):
-    self.log(Syslogh.ALERT, sAction, oMeta)
+    self.log(syslog.LOG_ALERT, sAction, oMeta)
 
   def em(self,sAction: str, oMeta):
-    self.log(Syslogh.EMERG, sAction, oMeta)
+    self.log(syslog.LOG_EMERG, sAction, oMeta)
 
   def dt(self,oTime: TimeKeeper, sActionOverride: Optional[str]):
     self.d(sActionOverride if sActionOverride else oTime.label(), {'--ms': oTime.stop()})

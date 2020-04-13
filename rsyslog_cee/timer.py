@@ -65,7 +65,7 @@ class Timer:
   oTimers: {}   # { str => TimeKeeper}
   oIndices: {}  # { str => int}
 
-  def __init__(self,bReturnTimers: bool = False) {
+  def __init__(self,bReturnTimers: bool = False):
     self.oTimers        = {}
     self.oIndices       = {}
     self.bReturnTimers  = bReturnTimers
@@ -103,7 +103,7 @@ class Timer:
 
   def start(self,sLabel: str):
     oTime = TimeKeeper(sLabel)
-    if not self.oTimers[sLabel]:
+    if sLabel not in self.oTimers:
       self.oTimers[sLabel] = [oTime]
     else:
       self.oTimers[sLabel].append(oTime)
