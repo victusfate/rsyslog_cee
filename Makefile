@@ -1,6 +1,6 @@
 .PHONY : githook all os init dev_dependencies dependencies start watch clean
 
-githook: init dependencies package
+githook: init dependencies
 
 all : init dev_dependencies dependencies os package
 
@@ -41,6 +41,12 @@ endif
 ifeq ($(OS), linux)
 	$(linux_python) setup.py sdist bdist_wheel
 endif
+
+deploy_dev:
+	gsutil cp dist/rsyslog_cee*.tar.gz gs://welcome_dev/code
+
+deploy_prod:
+	gsutil cp dist/rsyslog_cee*.tar.gz gs://welcome_prod/code
 
 
 os :
