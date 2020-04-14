@@ -42,10 +42,10 @@ ifeq ($(OS), linux)
 	$(linux_python) setup.py sdist bdist_wheel
 endif
 
-deploy_dev:
+deploy_dev: package
 	gsutil cp dist/rsyslog_cee*.tar.gz gs://welcome_dev/code
 
-deploy_prod:
+deploy_prod: package
 	gsutil cp dist/rsyslog_cee*.tar.gz gs://welcome_prod/code
 
 
