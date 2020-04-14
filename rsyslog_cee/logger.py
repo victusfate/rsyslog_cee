@@ -6,6 +6,7 @@ import datetime
 from .timer import Timer,TimeKeeper
 import copy
 import functools
+import re
 
 from typing import Optional
 from urllib.parse import urlparse
@@ -138,7 +139,7 @@ class Logger:
   def addRequestContext(self,oRequest):
     self._indexedLogRewriter('', {
         '#request': {
-            'headers':    JSON.stringify(oRequest.headers),
+            'headers':    json.dumps(oRequest.headers),
             'host':       oRequest.headers['host'],
             'method':     oRequest.method,
             'parameters': {
@@ -185,7 +186,7 @@ class Logger:
   @staticmethod
   def _syslogFormatter(oMessage) -> str:
     oMessageOut = {}
-    for sKey,mValue in oMessage.items:
+    for sKey,mValue in oMessage.items():
       try:
         data = mValue.decode('base64')
         oMessageOut[sKey] = data
@@ -217,23 +218,26 @@ class Logger:
         oOutput['--p'] = self.parent_hash
 
       # Move all "--*" items to root
-      for sKey in oClone.keys():
-        if sKey.index('--') == 0:
-          oOutput[sKey] = oClone[sKey]
-          del oClone[sKey]
+      
+      for sKey in oMeta.keys():
+        try:
+          if sKey.index('--') == 0:
+            oOutput[sKey] = oClone[sKey]
+            del oClone[sKey]
 
-        if sKey.index('#') == 0:
-          # TODO convert regex to python
-          # sStrippedKey = sKey.replace(/^#+/, '')
-          oClone[sStrippedKey] = oClone[sKey]
-          del oClone[sKey]
+          if sKey.index('#') == 0:
+            sStrippedKey = re.sub('^#+','',sKey)
+            oClone[sStrippedKey] = oClone[sKey]
+            del oClone[sKey]
 
-          if ['str', 'float', 'bool'].find(type(oClone[sStrippedKey])) > -1:
-            self.Globals[sStrippedKey] = oClone[sStrippedKey]
-          else:
-            oTemp = copy.copy(self.Globals[sStrippedKey])
-            oTemp.update(oClone[sStrippedKey])
-            self.Globals[sStrippedKey] = oTemp
+            if ['str', 'float', 'bool'].find(type(oClone[sStrippedKey])) > -1:
+              self.Globals[sStrippedKey] = oClone[sStrippedKey]
+            else:
+              oTemp = copy.copy(self.Globals[sStrippedKey])
+              oTemp.update(oClone[sStrippedKey])
+              self.Globals[sStrippedKey] = oTemp
+        except:
+          pass
 
       if len(oClone) > 0:
         Logger._objectFromPath(oOutput, oOutput['--action'], oClone)
@@ -241,6 +245,7 @@ class Logger:
     return oOutput
 
   def log(self,iSeverity: int, sAction: str, oMeta):
+    print('logger.log iSeverity',iSeverity,'sAction',sAction,'oMeta',oMeta)
     oParsed  = Logger.JSONifyErrors(oMeta)
     oMessage = self._indexedLogRewriter(sAction,oParsed)
     sMessage = Logger._syslogFormatter(oMessage)
@@ -251,25 +256,29 @@ class Logger:
     # TODO need to test this
     if self.console:
       sMessage = json.dumps(oMessage,sort_keys=True,indent=4, separators=(',', ': '))
-      switcher = {
-          syslog.LOG_DEBUG:   print('DEBUG',   sMessage),
-          syslog.LOG_INFO:    print( 'INFO',    sMessage),
-          syslog.LOG_NOTICE:  print(  'NOTICE',  sMessage),
-          syslog.LOG_WARNING: print( 'WARNING', sMessage),
-          syslog.LOG_ERR:     print('ERR',     sMessage),
-          syslog.LOG_CRIT:    print('CRIT',    sMessage),
-          syslog.LOG_ALERT:   print('ALERT',   sMessage),
-          syslog.LOG_EMERG:   print('EMERG',   sMessage)
-      }
-      func = switcher.get(iSeverity,lambda :'Invalid')
-      func() 
+      if iSeverity == syslog.LOG_DEBUG:
+        print('DEBUG',   sMessage)
+      elif iSeverity == syslog.LOG_INFO:
+        print('INFO',    sMessage)
+      elif iSeverity == syslog.LOG_NOTICE:
+        print('NOTICE',  sMessage)
+      elif iSeverity == syslog.LOG_WARNING:
+        print('WARNING', sMessage)
+      elif iSeverity == syslog.LOG_ERR:
+        print('ERR',     sMessage)
+      elif iSeverity == syslog.LOG_CRIT:
+        print('CRIT',    sMessage)
+      elif iSeverity == syslog.LOG_ALERT:
+        print('ALERT',   sMessage)
+      elif iSeverity == syslog.LOG_EMERG:
+        print('EMERG',   sMessage)
 
   #  
   # 
   # @param sOverrideName
   # @returns {{"--ms": *, "--i": number, "--summary": boolean, "--span": {_format: string, version: number, start_timestamp: string, end_timestamp: string, service: string, indicator: boolean, metrics: string, error: boolean, name: string, tags: {}, context: {}}}}
   # 
-  def summary(sOverrideName: str = 'Summary'):
+  def summary(self,sOverrideName: str = 'Summary'):
     self.index += 1
     iTimer = self.metrics.stop('_REQUEST')
     oSummary = {
@@ -280,9 +289,9 @@ class Logger:
             '_format':         'SSFSpan.DashedTrace',
             'version':         1,
             'start_timestamp': self.start_timestamp,
-            'end_timestamp':   datetime.now(timezone.utc).isoformat(),
+            'end_timestamp':   datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'service':         self.service,
-            'metrics':         JSON.stringify(self.metrics.getAll()),
+            'metrics':         json.dumps(self.metrics.getAll()),
             'error':           self.is_error,
             'name':            self.purpose,
             'tags':            self.tags,
@@ -298,6 +307,7 @@ class Logger:
   # @param {object} oMeta
   # @return {string}
   #
+
   @staticmethod
   def JSONifyErrors(oMeta):
     # if oMeta:
@@ -305,23 +315,7 @@ class Logger:
 
     #   TODO start here
     #   maybe look https://docs.python.org/3/library/traceback.html
-
-
-    #   # sMeta = JSON.stringify(oMeta, (sKey: string , mValue: any) => {
-    #   #     if (util.types && util.types.isNativeError ? util.types.isNativeError(mValue) : util.isError(mValue)) {
-    #   #         bFoundErrors = true;
-    #   #         let oError: {[index: string]: any} = {};
-    #   #         Object.getOwnPropertyNames(mValue).forEach(sKey => {
-    #   #             if (sKey === 'stack') {
-    #   #                 oError[sKey] = mValue[sKey].split('\n');
-    #   #             } else {
-    #   #                 oError[sKey] = mValue[sKey];
-    #   #             }
-    #   #         });
-    #   #         return oError;
-    #   #     }
-    #   #     return mValue;
-    #   # });
+    #   original error checker https://github.com/enobrev/rsyslog-cee/blob/master/src/Logger.ts#L301-L331
 
     #   if bFoundErrors and sMeta:
     #     return JSON.parse(sMeta)
@@ -352,7 +346,7 @@ class Logger:
   def em(self,sAction: str, oMeta):
     self.log(syslog.LOG_EMERG, sAction, oMeta)
 
-  def dt(self,oTime: TimeKeeper, sActionOverride: Optional[str]):
+  def dt(self,oTime: TimeKeeper, sActionOverride: Optional[str] = None):
     self.d(sActionOverride if sActionOverride else oTime.label(), {'--ms': oTime.stop()})
   
   def startTimer(self,sLabel: str) -> TimeKeeper:
