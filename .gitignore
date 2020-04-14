@@ -4,7 +4,6 @@ model
 __pycache__
 *.db
 jobs
-rsyslog_cee.egg-info
 build/
 dist
 data/

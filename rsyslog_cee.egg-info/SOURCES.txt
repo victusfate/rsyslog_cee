@@ -1,0 +1,11 @@
+README.md
+setup.py
+rsyslog_cee/__init__.py
+rsyslog_cee/logger.py
+rsyslog_cee/timer.py
+rsyslog_cee.egg-info/PKG-INFO
+rsyslog_cee.egg-info/SOURCES.txt
+rsyslog_cee.egg-info/dependency_links.txt
+rsyslog_cee.egg-info/not-zip-safe
+rsyslog_cee.egg-info/top_level.txt
+test/test_log.py
