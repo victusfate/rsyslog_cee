@@ -1,4 +1,5 @@
 README.md
+setup.cfg
 setup.py
 rsyslog_cee/__init__.py
 rsyslog_cee/logger.py
