@@ -26,7 +26,7 @@ class TimeKeeper:
   
   @staticmethod
   def getTime() -> float:
-    return time.time_ns()/1e6
+    return time.time() * 1000 # ms
   
 
   def range(self) -> float:
