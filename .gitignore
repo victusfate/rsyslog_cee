@@ -5,5 +5,4 @@ __pycache__
 *.db
 jobs
 build/
-dist
 data/
