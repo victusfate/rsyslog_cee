@@ -8,7 +8,7 @@ class TimeKept():
   stop:  float
   range: float
 
-  def __init__(self,start: float,stop: float,range:  float):
+  def __init__(self,start: float,stop: float,range: float):
     self.start = start
     self.stop  = stop
     self.range = range
@@ -24,13 +24,13 @@ class TimeKeeper():
   _start: float
 
   _stop:  float
-  _range: float
+  _range: Optional[float]
 
   def __init__(self,sLabel: str):
     self._label = sLabel
     self._start = TimeKeeper.getTime()
     self._stop  = 0
-    self._range = 0
+    self._range = None
   
   @staticmethod
   def getTime() -> float:
@@ -120,7 +120,6 @@ class Timer:
     oReturn = {}
     for sLabel in self.oTimers.keys():
       oTimer = self.get(sLabel)
-      print('getAll sLabel',sLabel,'oTimer',oTimer.toJson())
       if oTimer:
         oReturn[sLabel] = oTimer.toJson()
     return oReturn
