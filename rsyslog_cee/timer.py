@@ -1,5 +1,7 @@
+import json
 import time
 from typing import Optional
+from json import JSONEncoder
 
 class TimeKept:
   start: float
@@ -11,7 +13,7 @@ class TimeKept:
     self.stop  = stop
     self.range = range
 
-class TimeKeeper:
+class TimeKeeper():
   _label: str
   _start: float
 
@@ -50,8 +52,13 @@ class TimeKeeper:
   def started(self) -> bool:
     return self._start > 0
 
-  def toObject() -> TimeKept:
+  def toObject(self) -> TimeKept:
     return TimeKept(self._start,self._stop,self.range())
+
+# class TimeKeeperEncoder(JSONEncoder):
+#   def default(self, o):
+#       return o.toObject().__dict__
+
 
 class TimerInfo:
   range:   float = 0
@@ -101,7 +108,7 @@ class Timer:
     for sLabel in self.oTimers.keys():
       oTimer = self.get(sLabel)
       if oTimer:
-        oReturn[sLabel] = oTimer
+        oReturn[sLabel] = oTimer.toObject()
     return oReturn
 
   def find(self,sLabel: str):

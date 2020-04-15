@@ -291,7 +291,7 @@ class Logger:
             'start_timestamp': self.start_timestamp,
             'end_timestamp':   datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'service':         self.service,
-            'metrics':         json.dumps(self.metrics.getAll()),
+            'metrics':         json.dumps(self.metrics.getAll(),cls = TimeKeeperEncoder),
             'error':           self.is_error,
             'name':            self.purpose,
             'tags':            self.tags,
