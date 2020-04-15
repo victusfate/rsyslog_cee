@@ -25,4 +25,9 @@ oLogger.em('Emergency', {'test': 'OMGWTF!!'})
 time.sleep(1)
 
 oLogger.dt(oTimer)
+
+oLogger.summary()
+
+
 oLogger.removeSyslog()
+

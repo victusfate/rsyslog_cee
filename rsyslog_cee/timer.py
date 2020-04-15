@@ -3,7 +3,7 @@ import time
 from typing import Optional
 from json import JSONEncoder
 
-class TimeKept:
+class TimeKept():
   start: float
   stop:  float
   range: float
@@ -12,6 +12,12 @@ class TimeKept:
     self.start = start
     self.stop  = stop
     self.range = range
+
+  def asdict(self):
+        return {'start': self.start, 'stop': self.stop, 'range': self.range }    
+
+  def toJson(self):
+    return json.dumps(dict(self))
 
 class TimeKeeper():
   _label: str
@@ -52,13 +58,8 @@ class TimeKeeper():
   def started(self) -> bool:
     return self._start > 0
 
-  def toObject(self) -> TimeKept:
-    return TimeKept(self._start,self._stop,self.range())
-
-# class TimeKeeperEncoder(JSONEncoder):
-#   def default(self, o):
-#       return o.toObject().__dict__
-
+  def toJson(self):
+    return TimeKept(self._start,self._stop,self.range()).toJson()
 
 class TimerInfo:
   range:   float = 0
@@ -71,6 +72,18 @@ class TimerInfo:
     self.count = count
     self.average = average
     self.timers = timers
+
+  def toJson(self):
+    hout = {}
+    hout['range'] = self.range
+    hout['count'] = self.count
+    hout['average'] = self.average
+    otimers = []
+    for oTimer in self.timers:
+      otimers = oTimer.toJson() 
+    hout['timers'] = otimers
+    return json.dumps(hout)
+
 
 class Timer:
   bReturnTimers:  bool
@@ -98,7 +111,7 @@ class Timer:
           if self.bReturnTimers:
             if not oReturn.timers:
               oReturn.timers = []
-            oReturn.timers.append(oTime.toObject())
+            oReturn.timers.append(oTime)
 
       oReturn.average = oReturn.range / oReturn.count
       return oReturn
@@ -107,8 +120,9 @@ class Timer:
     oReturn = {}
     for sLabel in self.oTimers.keys():
       oTimer = self.get(sLabel)
+      print('getAll sLabel',sLabel,'oTimer',oTimer.toJson())
       if oTimer:
-        oReturn[sLabel] = oTimer.toObject()
+        oReturn[sLabel] = oTimer.toJson()
     return oReturn
 
   def find(self,sLabel: str):

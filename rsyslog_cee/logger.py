@@ -56,10 +56,10 @@ class Logger:
   is_error:        bool
   console:         bool
   syslog:          bool
-  purpose:         Optional[str]
+  purpose:         Optional[str] = None
 
   Globals = {}        #  [index: string]: any
-  tags: {}            # [index: string]: any
+  tags    = {}        # [index: string]: any
 
   def __init__(self,oOptions: LoggerOptions):
     self.Globals    = {}
@@ -291,7 +291,7 @@ class Logger:
             'start_timestamp': self.start_timestamp,
             'end_timestamp':   datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'service':         self.service,
-            'metrics':         json.dumps(self.metrics.getAll(),cls = TimeKeeperEncoder),
+            'metrics':         json.dumps(self.metrics.getAll()),
             'error':           self.is_error,
             'name':            self.purpose,
             'tags':            self.tags,
