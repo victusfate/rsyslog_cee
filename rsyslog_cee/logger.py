@@ -245,7 +245,7 @@ class Logger:
     return oOutput
 
   def log(self,iSeverity: int, sAction: str, oMeta):
-    print('logger.log iSeverity',iSeverity,'sAction',sAction,'oMeta',oMeta)
+    # print('logger.log iSeverity',iSeverity,'sAction',sAction,'oMeta',oMeta)
     oParsed  = Logger.JSONifyErrors(oMeta)
     oMessage = self._indexedLogRewriter(sAction,oParsed)
     sMessage = Logger._syslogFormatter(oMessage)
