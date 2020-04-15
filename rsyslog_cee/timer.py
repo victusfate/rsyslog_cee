@@ -59,7 +59,7 @@ class TimerInfo:
   average: float = 0
   timers:  [Optional[TimeKept]] = []
 
-  def __init__(self,range=0,count=0,average=0,timers=[])
+  def __init__(self,range=0,count=0,average=0,timers=[]):
     self.range = range
     self.count = count
     self.average = average
