@@ -54,10 +54,10 @@ class TimeKeeper:
     return TimeKept(self._start,self._stop,self.range())
 
 class TimerInfo:
-  range:   float
-  count:   float
-  average: float
-  timers:  [Optional[TimeKept]]
+  range:   float = 0
+  count:   float = 0
+  average: float = 0
+  timers:  [Optional[TimeKept]] = []
 
 class Timer:
   bReturnTimers:  bool
@@ -77,7 +77,7 @@ class Timer:
   def get(self,sLabel: str) -> Optional[TimerInfo]:
     if sLabel in self.oTimers and len(self.oTimers[sLabel]) > 0:
       aTimers = self.oTimers[sLabel]
-      oReturn: TimerInfo(range=0,count=0,average=0)
+      oReturn = TimerInfo(range=0,count=0,average=0)
       for oTime in aTimers:
         if oTime.started():
           oReturn.range += oTime.range()
