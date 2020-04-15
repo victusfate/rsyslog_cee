@@ -65,7 +65,7 @@ class TimerInfo:
   range:   float = 0
   count:   float = 0
   average: float = 0
-  timers:  [Optional[TimeKept]] = []
+  timers:  [TimeKept] = []
 
   def __init__(self,range=0,count=0,average=0,timers=[]):
     self.range = range
@@ -101,6 +101,7 @@ class Timer:
     self.bReturnTimers = bReturnTimers;
 
   def get(self,sLabel: str) -> Optional[TimerInfo]:
+    oReturn = None
     if sLabel in self.oTimers and len(self.oTimers[sLabel]) > 0:
       aTimers = self.oTimers[sLabel]
       oReturn = TimerInfo(range=0,count=0,average=0)
@@ -114,7 +115,7 @@ class Timer:
             oReturn.timers.append(oTime)
 
       oReturn.average = oReturn.range / oReturn.count
-      return oReturn
+    return oReturn
 
   def getAll(self):
     oReturn = {}
