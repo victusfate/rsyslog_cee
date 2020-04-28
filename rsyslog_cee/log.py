@@ -16,7 +16,7 @@ from rsyslog_cee.logger import Logger,LoggerOptions
 oLogger = None
 service_name = 'log'
 
-def reset(new_name=service_name):
+def reset():
   global oLogger 
   oLogger = Logger(
       LoggerOptions(
