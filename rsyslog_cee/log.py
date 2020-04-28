@@ -26,9 +26,10 @@ def reset():
       )
   )
 
-def set_log_service_name(new_name):
+def set_service_name(new_name):
   global service_name
-  service_name = new_name  
+  service_name = new_name
+  reset()
 
 def set_logger(oNewLogger):
   global oLogger
