@@ -14,7 +14,9 @@ import rsyslog_cee
 from rsyslog_cee.logger import Logger,LoggerOptions
 
 oLogger = None
-def reset(service_name):
+service_name = 'log'
+
+def reset(new_name=service_name):
   global oLogger 
   oLogger = Logger(
       LoggerOptions(
@@ -23,7 +25,11 @@ def reset(service_name):
           syslog=  True         # Output logs to syslog
       )
   )
-  
+
+def set_log_service_name(new_name):
+  global service_name
+  service_name = new_name  
+
 def set_logger(oNewLogger):
   global oLogger
   oLogger = oNewLogger
