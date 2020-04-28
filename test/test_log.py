@@ -2,10 +2,25 @@
 import time
 import rsyslog_cee
 from rsyslog_cee.logger import Logger,LoggerOptions
+from rsyslog_cee import log
+
+oNewLogger = Logger(
+      LoggerOptions(
+          service='Whatever.log', # The App Name for Syslog
+          console= True,       # we log to console here
+          syslog=  True         # Output logs to syslog
+      )
+  )
+log.set_logger(oNewLogger)
+
+log.info('test info')
+log.debug('test debug')
+log.err('test err')
+log.alert('test alert')
 
 oLogger = Logger(
     LoggerOptions(
-        service='Whatever', # The App Name for Syslog
+        service='Whatever.oLogger', # The App Name for Syslog
         console= True,       # Output logs to console
         syslog=  True        # Output logs to syslog
     )
@@ -27,7 +42,7 @@ time.sleep(1)
 oLogger.dt(oTimer)
 
 oLogger.summary()
-
+log.oLogger.summary()
 
 oLogger.removeSyslog()
 

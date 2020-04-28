@@ -2,6 +2,7 @@ README.md
 setup.cfg
 setup.py
 rsyslog_cee/__init__.py
+rsyslog_cee/log.py
 rsyslog_cee/logger.py
 rsyslog_cee/timer.py
 rsyslog_cee.egg-info/PKG-INFO
