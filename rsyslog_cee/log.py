@@ -60,7 +60,7 @@ def __log_level(level,*argv):
   output_string = output_format.format(*argv)
   oLogger.log(level,ld['action'],{ 'proc_info': ld, 'message' : output_string })
   ld['message'] = output_string
-  print(json.dumps(ld))
+  # print(json.dumps(ld))
 
 def debug(*argv):
   return __log_level(syslog.LOG_DEBUG,*argv)

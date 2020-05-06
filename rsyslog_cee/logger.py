@@ -7,6 +7,7 @@ from .timer import Timer,TimeKeeper
 import copy
 import functools
 import re
+import logging
 
 from typing import Optional
 from urllib.parse import urlparse
@@ -257,21 +258,21 @@ class Logger:
     if self.console:
       sMessage = json.dumps(oMessage,sort_keys=True,indent=4, separators=(',', ': '))
       if iSeverity == syslog.LOG_DEBUG:
-        print('DEBUG',   sMessage)
+        logging.debug('DEBUG ' + sMessage)
       elif iSeverity == syslog.LOG_INFO:
-        print('INFO',    sMessage)
+        logging.info('INFO ' + sMessage)
       elif iSeverity == syslog.LOG_NOTICE:
-        print('NOTICE',  sMessage)
+        logging.info('NOTICE ' + sMessage)
       elif iSeverity == syslog.LOG_WARNING:
-        print('WARNING', sMessage)
+        logging.warning('WARNING ' + sMessage)
       elif iSeverity == syslog.LOG_ERR:
-        print('ERR',     sMessage)
+        logging.error('ERR ' + sMessage)
       elif iSeverity == syslog.LOG_CRIT:
-        print('CRIT',    sMessage)
+        logging.critical('CRIT ' + sMessage)
       elif iSeverity == syslog.LOG_ALERT:
-        print('ALERT',   sMessage)
+        logging.critical('ALERT ' + sMessage)
       elif iSeverity == syslog.LOG_EMERG:
-        print('EMERG',   sMessage)
+        logging.critical('EMERG ' + sMessage)
 
   #  
   # 
