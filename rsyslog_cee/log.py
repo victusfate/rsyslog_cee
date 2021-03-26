@@ -6,10 +6,6 @@ import json
 import inspect
 from inspect import getframeinfo, stack
 
-import absl.logging
-absl.logging.set_verbosity('info')
-absl.logging.set_stderrthreshold('info')
-
 import rsyslog_cee
 from rsyslog_cee.logger import Logger,LoggerOptions
 
