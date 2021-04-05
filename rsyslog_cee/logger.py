@@ -1,3 +1,4 @@
+import sys
 import json
 import hashlib
 import urllib
@@ -8,6 +9,8 @@ import copy
 import functools
 import re
 import logging
+
+logging.StreamHandler(sys.stdout)
 
 from typing import Optional
 from urllib.parse import urlparse

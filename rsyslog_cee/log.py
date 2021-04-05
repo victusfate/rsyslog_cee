@@ -17,8 +17,8 @@ def reset():
   oLogger = Logger(
       LoggerOptions(
           service=service_name, # The App Name for Syslog
-          console= False,       # we log to console here
-          syslog=  True         # Output logs to syslog
+          console= True,       # we log to console here
+          syslog=  False         # Output logs to syslog
       )
   )
 
