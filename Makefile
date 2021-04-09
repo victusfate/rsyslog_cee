@@ -48,11 +48,12 @@ deploy_local: package
 deploy_d2: package
 	gsutil cp dist/rsyslog_cee*.tar.gz gs://welcome_d2/code/rsyslog_cee-0.1.0.tar.gz
 
-deploy_s2: package
-	gsutil cp dist/rsyslog_cee*.tar.gz gs://welcome_s2/code/rsyslog_cee-0.1.0.tar.gz
+deploy_beta: package
+	gsutil cp dist/rsyslog_cee*.tar.gz gs://welcome_beta/code/rsyslog_cee-0.1.0.tar.gz
 
-deploy_p2: package
-	gsutil cp dist/rsyslog_cee*.tar.gz gs://welcome_p2/code/rsyslog_cee-0.1.0.tar.gz
+
+# deploy_p2: package
+# 	gsutil cp dist/rsyslog_cee*.tar.gz gs://welcome_p2/code/rsyslog_cee-0.1.0.tar.gz
 
 
 os :
