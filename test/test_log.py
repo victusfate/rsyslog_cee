@@ -4,45 +4,52 @@ import rsyslog_cee
 from rsyslog_cee.logger import Logger,LoggerOptions
 from rsyslog_cee import log
 
-oNewLogger = Logger(
+
+def test_log():
+  oNewLogger = Logger(
       LoggerOptions(
           service='Whatever.log', # The App Name for Syslog
           console= True,       # we log to console here
-          syslog=  True         # Output logs to syslog
+          syslog=  False         # Output logs to syslog
       )
   )
-log.set_logger(oNewLogger)
+  log.set_logger(oNewLogger)
 
-log.info('test info')
-log.debug('test debug')
-log.err('test err')
-log.alert('test alert')
+  log.info('test info')
+  log.debug('test debug')
+  log.warning('test warning')
+  log.err('test err')
+  log.alert('test alert')
+  log.oLogger.summary()
 
-oLogger = Logger(
-    LoggerOptions(
-        service='Whatever.oLogger', # The App Name for Syslog
-        console= True,       # Output logs to console
-        syslog=  True        # Output logs to syslog
-    )
-)
+test_log()
 
-oTimer = oLogger.startTimer('Test')
+def test_logger():
+  oLogger = Logger(
+      LoggerOptions(
+          service='Whatever.oLogger', # The App Name for Syslog
+          console= True,       # Output logs to console
+          syslog=  False        # Output logs to syslog
+      )
+  )
 
-oLogger.d('Debug', {'test': 'Debugging'})
-oLogger.w('Warn', {'test': 'Warning'})
-oLogger.i('Info', {'test': 'Information'})
-oLogger.n('Notice', {'test': 'Notification'})
-oLogger.e('Error', {'test': 'Error!'})
-oLogger.c('Critical', {'test': 'Critical!'})
-oLogger.a('Alert', {'test': 'Hey!'})
-oLogger.em('Emergency', {'test': 'OMGWTF!!'})
+  oTimer = oLogger.startTimer('Test')
 
-time.sleep(1)
+  oLogger.d('Debug', {'test': 'Debugging'})
+  oLogger.w('Warn', {'test': 'Warning'})
+  oLogger.i('Info', {'test': 'Information'})
+  oLogger.n('Notice', {'test': 'Notification'})
+  oLogger.e('Error', {'test': 'Error!'})
+  oLogger.c('Critical', {'test': 'Critical!'})
+  oLogger.a('Alert', {'test': 'Hey!'})
+  oLogger.em('Emergency', {'test': 'OMGWTF!!'})
 
-oLogger.dt(oTimer)
+  time.sleep(1)
 
-oLogger.summary()
-log.oLogger.summary()
+  oLogger.dt(oTimer)
 
-oLogger.removeSyslog()
+  oLogger.summary()
+  oLogger.removeSyslog()
+
+test_logger()
 

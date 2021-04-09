@@ -64,6 +64,9 @@ def debug(*argv):
 def info(*argv):
   return __log_level(syslog.LOG_INFO,*argv)
 
+def warning(*argv):
+  return __log_level(syslog.LOG_WARNING,*argv)
+
 def err(*argv):
   return __log_level(syslog.LOG_ERR,*argv)
 

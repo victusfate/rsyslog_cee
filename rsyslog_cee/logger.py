@@ -10,7 +10,10 @@ import functools
 import re
 import logging
 
+# https://stackoverflow.com/a/56144390/51700
+logging.basicConfig(level=logging.NOTSET)
 logging.StreamHandler(sys.stdout)
+
 
 from typing import Optional
 from urllib.parse import urlparse
@@ -249,7 +252,7 @@ class Logger:
     return oOutput
 
   def log(self,iSeverity: int, sAction: str, oMeta):
-    # print('logger.log iSeverity',iSeverity,'sAction',sAction,'oMeta',oMeta)
+    # print('logger.log iSeverity',iSeverity,'sAction',sAction,'oMeta',oMeta,'self.console',self.console)
     oParsed  = Logger.JSONifyErrors(oMeta)
     oMessage = self._indexedLogRewriter(sAction,oParsed)
     sMessage = Logger._syslogFormatter(oMessage)
