@@ -11,7 +11,7 @@ import re
 import logging
 
 # https://stackoverflow.com/a/56144390/51700
-logging.basicConfig(level=logging.NOTSET)
+logging.basicConfig(level=logging.INFO)
 logging.StreamHandler(sys.stdout)
 
 
