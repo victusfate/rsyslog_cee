@@ -79,9 +79,9 @@ class Logger:
 
     self.logger = logging.getLogger()
     self.logger.handlers = []
-    self.logger.setLevel(logging.DEBUG)
+    self.logger.setLevel(logging.INFO)
     self.handler = logging.StreamHandler()
-    self.handler.setLevel(logging.DEBUG)
+    self.handler.setLevel(logging.INFO)
     self.logger.addHandler(self.handler)
     # self.logger.debug('test debug')
     # self.logger.info('test info')

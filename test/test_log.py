@@ -40,11 +40,11 @@ def test_logger():
 
   oTimer = oLogger.startTimer('Test')
 
-  # see logging.basicConfig(level=logging.INFO)
+  oLogger.setLevel(logging.INFO)
   oLogger.d('Debug', {'test': 'Debugging, this will not show due to min log level info'})
-  logging.basicConfig(level=logging.DEBUG)
+  oLogger.setLevel(logging.DEBUG)
   oLogger.d('Debug', {'test': 'Debugging, this shows now'})
-  logging.basicConfig(level=logging.INFO)
+  oLogger.setLevel(logging.INFO)
   oLogger.w('Warn', {'test': 'Warning'})
   oLogger.i('Info', {'test': 'Information'})
   oLogger.n('Notice', {'test': 'Notification'})
@@ -61,4 +61,6 @@ def test_logger():
   oLogger.removeSyslog()
 
 test_logger()
+
+
 
