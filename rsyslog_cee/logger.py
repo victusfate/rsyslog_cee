@@ -10,9 +10,8 @@ import functools
 import re
 import logging
 
-# https://stackoverflow.com/a/56144390/51700
-logging.basicConfig(level=logging.INFO)
 logging.StreamHandler(sys.stdout)
+# logging.basicConfig(level=logging.INFO)
 
 
 from typing import Optional
@@ -68,12 +67,28 @@ class Logger:
   Globals = {}        #  [index: string]: any
   tags    = {}        # [index: string]: any
 
+  logger:         None
+  handler:        None
+
   def __init__(self,oOptions: LoggerOptions):
     self.Globals    = {}
     self.index      = 0
     self.is_error   = False
     self.console    = False
     self.syslog     = False
+
+    self.logger = logging.getLogger()
+    self.logger.handlers = []
+    self.logger.setLevel(logging.DEBUG)
+    self.handler = logging.StreamHandler()
+    self.handler.setLevel(logging.DEBUG)
+    self.logger.addHandler(self.handler)
+    # self.logger.debug('test debug')
+    # self.logger.info('test info')
+    # self.logger.warning('test warning')
+    # self.logger.error('test error')
+    # self.logger.critical('test critical')
+
 
     if not oOptions.service:
       raise Exception('Please set service name in options')
@@ -251,6 +266,19 @@ class Logger:
 
     return oOutput
 
+  def setLevel(self,iSeverity):
+    self.logger = logging.getLogger()
+    self.logger.handlers = []
+    self.logger.setLevel(iSeverity)
+    self.handler = logging.StreamHandler()
+    self.handler.setLevel(iSeverity)
+    self.logger.addHandler(self.handler)
+    # self.logger.debug('test debug')
+    # self.logger.info('test info')
+    # self.logger.warning('test warning')
+    # self.logger.error('test error')
+    # self.logger.critical('test critical')
+
   def log(self,iSeverity: int, sAction: str, oMeta):
     # print('logger.log iSeverity',iSeverity,'sAction',sAction,'oMeta',oMeta,'self.console',self.console)
     oParsed  = Logger.JSONifyErrors(oMeta)
@@ -264,21 +292,21 @@ class Logger:
     if self.console:
       sMessage = json.dumps(oMessage,sort_keys=True,indent=4, separators=(',', ': '))
       if iSeverity == syslog.LOG_DEBUG:
-        logging.debug('DEBUG ' + sMessage)
+        self.logger.debug('DEBUG ' + sMessage)
       elif iSeverity == syslog.LOG_INFO:
-        logging.info('INFO ' + sMessage)
+        self.logger.info('INFO ' + sMessage)
       elif iSeverity == syslog.LOG_NOTICE:
-        logging.info('NOTICE ' + sMessage)
+        self.logger.info('NOTICE ' + sMessage)
       elif iSeverity == syslog.LOG_WARNING:
-        logging.warning('WARNING ' + sMessage)
+        self.logger.warning('WARNING ' + sMessage)
       elif iSeverity == syslog.LOG_ERR:
-        logging.error('ERR ' + sMessage)
+        self.logger.error('ERR ' + sMessage)
       elif iSeverity == syslog.LOG_CRIT:
-        logging.critical('CRIT ' + sMessage)
+        self.logger.critical('CRIT ' + sMessage)
       elif iSeverity == syslog.LOG_ALERT:
-        logging.critical('ALERT ' + sMessage)
+        self.logger.critical('ALERT ' + sMessage)
       elif iSeverity == syslog.LOG_EMERG:
-        logging.critical('EMERG ' + sMessage)
+        self.logger.critical('EMERG ' + sMessage)
 
   #  
   # 

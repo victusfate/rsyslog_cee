@@ -4,19 +4,24 @@ import rsyslog_cee
 from rsyslog_cee.logger import Logger,LoggerOptions
 from rsyslog_cee import log
 
+import logging
 
 def test_log():
   oNewLogger = Logger(
       LoggerOptions(
           service='Whatever.log', # The App Name for Syslog
-          console= True,       # we log to console here
-          syslog=  False         # Output logs to syslog
+          console= True,          # we log to console here
+          syslog=  False          # Output logs to syslog
       )
   )
   log.set_logger(oNewLogger)
 
+  # see logging.basicConfig(level=logging.INFO)
+  log.oLogger.setLevel(logging.INFO)
+  log.debug('test debug -> this will not show due to min log level info')
+  log.oLogger.setLevel(logging.DEBUG)
+  log.debug('test debug -> this shows now')
   log.info('test info')
-  log.debug('test debug')
   log.warning('test warning')
   log.err('test err')
   log.alert('test alert')
@@ -28,14 +33,18 @@ def test_logger():
   oLogger = Logger(
       LoggerOptions(
           service='Whatever.oLogger', # The App Name for Syslog
-          console= True,       # Output logs to console
-          syslog=  False        # Output logs to syslog
+          console= True,              # Output logs to console
+          syslog=  False              # Output logs to syslog
       )
   )
 
   oTimer = oLogger.startTimer('Test')
 
-  oLogger.d('Debug', {'test': 'Debugging'})
+  # see logging.basicConfig(level=logging.INFO)
+  oLogger.d('Debug', {'test': 'Debugging, this will not show due to min log level info'})
+  logging.basicConfig(level=logging.DEBUG)
+  oLogger.d('Debug', {'test': 'Debugging, this shows now'})
+  logging.basicConfig(level=logging.INFO)
   oLogger.w('Warn', {'test': 'Warning'})
   oLogger.i('Info', {'test': 'Information'})
   oLogger.n('Notice', {'test': 'Notification'})
