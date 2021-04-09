@@ -55,6 +55,7 @@ deploy_beta: package
 # deploy_p2: package
 # 	gsutil cp dist/rsyslog_cee*.tar.gz gs://welcome_p2/code/rsyslog_cee-0.1.0.tar.gz
 
+deploy_gcs: deploy_local deploy_d2 deploy_beta
 
 os :
 	@echo $(OS)
