@@ -13,7 +13,6 @@ import logging
 # logging.StreamHandler(sys.stdout)
 # logging.basicConfig(level=logging.INFO)
 
-
 from typing import Optional
 from urllib.parse import urlparse
 
@@ -70,6 +69,8 @@ class Logger:
   logger:         None
   handler:        None
 
+  severity_strings = {}
+
   def __init__(self,oOptions: LoggerOptions):
     self.Globals    = {}
     self.index      = 0
@@ -89,7 +90,15 @@ class Logger:
     # self.logger.error('test error')
     # self.logger.critical('test critical')
 
-
+    self.severity_strings[syslog.LOG_DEBUG]   = 'DEBUG'
+    self.severity_strings[syslog.LOG_INFO]    = 'INFO'
+    self.severity_strings[syslog.LOG_NOTICE]  = 'NOTICE'
+    self.severity_strings[syslog.LOG_WARNING] = 'WARN'    
+    self.severity_strings[syslog.LOG_ERR]     = 'ERROR'
+    self.severity_strings[syslog.LOG_CRIT]    = 'CRITICAL'
+    self.severity_strings[syslog.LOG_ALERT]   = 'ALERT'
+    self.severity_strings[syslog.LOG_EMERG]   = 'EMERGENCY'    
+    
     if not oOptions.service:
       raise Exception('Please set service name in options')
 
@@ -288,27 +297,11 @@ class Logger:
     if self.syslog:
       syslog.syslog(iSeverity, sMessage);
 
-    # TODO need to test this
     if self.console:
-      sMessage = json.dumps(oMessage,sort_keys=True,indent=4, separators=(',', ': '))
-      if iSeverity == syslog.LOG_DEBUG:
-        self.logger.debug('DEBUG ' + sMessage)
-      elif iSeverity == syslog.LOG_INFO:
-        self.logger.info('INFO ' + sMessage)
-      elif iSeverity == syslog.LOG_NOTICE:
-        self.logger.info('NOTICE ' + sMessage)
-      elif iSeverity == syslog.LOG_WARNING:
-        self.logger.warning('WARNING ' + sMessage)
-      elif iSeverity == syslog.LOG_ERR:
-        self.logger.error('ERR ' + sMessage)
-      elif iSeverity == syslog.LOG_CRIT:
-        self.logger.critical('CRIT ' + sMessage)
-      elif iSeverity == syslog.LOG_ALERT:
-        self.logger.critical('ALERT ' + sMessage)
-      elif iSeverity == syslog.LOG_EMERG:
-        self.logger.critical('EMERG ' + sMessage)
+      oMessage['--sn'] = self.severity_strings[iSeverity]
+      sMessage = '@cee:' + json.dumps(oMessage,sort_keys=True,indent=4, separators=(',', ': '))
+      self.logger.debug(sMessage)
 
-  #  
   # 
   # @param sOverrideName
   # @returns {{"--ms": *, "--i": number, "--summary": boolean, "--span": {_format: string, version: number, start_timestamp: string, end_timestamp: string, service: string, indicator: boolean, metrics: string, error: boolean, name: string, tags: {}, context: {}}}}
