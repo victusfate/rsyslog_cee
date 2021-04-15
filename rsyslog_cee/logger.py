@@ -10,7 +10,7 @@ import functools
 import re
 import logging
 
-logging.StreamHandler(sys.stdout)
+# logging.StreamHandler(sys.stdout)
 # logging.basicConfig(level=logging.INFO)
 
 from typing import Optional
@@ -80,9 +80,9 @@ class Logger:
 
     self.logger = logging.getLogger()
     self.logger.handlers = []
-    self.logger.setLevel(logging.DEBUG)
+    self.logger.setLevel(logging.INFO)
     self.handler = logging.StreamHandler(sys.stdout)
-    self.handler.setLevel(logging.DEBUG)
+    self.handler.setLevel(logging.INFO)
     self.logger.addHandler(self.handler)
     # self.logger.debug('test debug')
     # self.logger.info('test info')
