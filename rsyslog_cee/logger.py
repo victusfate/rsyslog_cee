@@ -299,7 +299,7 @@ class Logger:
 
     if self.console:
       oMessage['--sn'] = self.severity_strings[iSeverity]
-      sMessage = '@cee:' + json.dumps(oMessage,sort_keys=True,indent=4, separators=(',', ': '))
+      sMessage = '@cee:' + json.dumps(oMessage,sort_keys=True,separators=(',', ': '))
       self.logger.debug(sMessage)
 
   # 
