@@ -17,10 +17,10 @@ def test_log():
   log.set_logger(oNewLogger)
 
   # see logging.basicConfig(level=logging.INFO)
-  log.oLogger.setLevel(logging.INFO)
-  log.debug('test debug -> this will not show due to min log level info')
   log.oLogger.setLevel(logging.DEBUG)
   log.debug('test debug -> this shows now')
+  log.oLogger.setLevel(logging.INFO)
+  log.debug('test debug -> this will not show due to min log level info')
   log.info('test info')
   log.warning('test warning')
   log.err('test err')
@@ -40,11 +40,10 @@ def test_logger():
 
   oTimer = oLogger.startTimer('Test')
 
-  oLogger.setLevel(logging.INFO)
-  oLogger.d('Debug', {'test': 'Debugging, this will not show due to min log level info'})
   oLogger.setLevel(logging.DEBUG)
   oLogger.d('Debug', {'test': 'Debugging, this shows now'})
   oLogger.setLevel(logging.INFO)
+  oLogger.d('Debug', {'test': 'Debugging, this will not show due to min log level info'})
   oLogger.w('Warn', {'test': 'Warning'})
   oLogger.i('Info', {'test': 'Information'})
   oLogger.n('Notice', {'test': 'Notification'})

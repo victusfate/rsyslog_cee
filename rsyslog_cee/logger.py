@@ -48,6 +48,17 @@ class TraceTags:
   parent_hash: Optional[str]
 
 
+SYSLOG_TO_LOGGING_SEVERITY = {
+    syslog.LOG_DEBUG   : logging.DEBUG,
+    syslog.LOG_INFO    : logging.INFO,
+    syslog.LOG_NOTICE  : logging.INFO,
+    syslog.LOG_WARNING : logging.WARNING, 
+    syslog.LOG_ERR     : logging.ERROR,
+    syslog.LOG_CRIT    : logging.CRITICAL,
+    syslog.LOG_ALERT   : logging.CRITICAL,
+    syslog.LOG_EMERG   : logging.CRITICAL,
+}
+
 
 class Logger:
   service:         str
@@ -78,11 +89,16 @@ class Logger:
     self.console    = False
     self.syslog     = False
 
-    self.logger = logging.getLogger()
+    if not oOptions.service:
+      raise Exception('Please set service name in options')
+
+    self.service = oOptions.service
+
+    self.logger = logging.getLogger(self.service)
     self.logger.handlers = []
-    self.logger.setLevel(logging.INFO)
+    self.logger.setLevel(logging.DEBUG)
     self.handler = logging.StreamHandler(sys.stdout)
-    self.handler.setLevel(logging.INFO)
+    self.handler.setLevel(logging.DEBUG)
     self.logger.addHandler(self.handler)
     # self.logger.debug('test debug')
     # self.logger.info('test info')
@@ -97,12 +113,9 @@ class Logger:
     self.severity_strings[syslog.LOG_ERR]     = 'ERROR'
     self.severity_strings[syslog.LOG_CRIT]    = 'CRITICAL'
     self.severity_strings[syslog.LOG_ALERT]   = 'ALERT'
-    self.severity_strings[syslog.LOG_EMERG]   = 'EMERGENCY'    
+    self.severity_strings[syslog.LOG_EMERG]   = 'EMERGENCY' 
+   
     
-    if not oOptions.service:
-      raise Exception('Please set service name in options')
-
-    self.service = oOptions.service
 
     if oOptions.console:
       self.addConsole()
@@ -276,7 +289,7 @@ class Logger:
     return oOutput
 
   def setLevel(self,iSeverity):
-    self.logger = logging.getLogger()
+    self.logger = logging.getLogger(self.service)
     self.logger.handlers = []
     self.logger.setLevel(iSeverity)
     self.handler = logging.StreamHandler(sys.stdout)
@@ -300,7 +313,8 @@ class Logger:
     if self.console:
       oMessage['--sn'] = self.severity_strings[iSeverity]
       sMessage = '@cee:' + json.dumps(oMessage,sort_keys=True,separators=(',', ': '))
-      self.logger.debug(sMessage)
+      iLoggingSeverity = SYSLOG_TO_LOGGING_SEVERITY[iSeverity]
+      self.logger.log(iLoggingSeverity,sMessage)
 
   # 
   # @param sOverrideName
