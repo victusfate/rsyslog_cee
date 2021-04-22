@@ -237,7 +237,7 @@ class Logger:
       except (UnicodeDecodeError, AttributeError):
         oMessageOut[sKey] = mValue
 
-    return '@cee: ' + json.dumps(oMessageOut)
+    return json.dumps(oMessageOut)
 
   def _indexedLogRewriter(self,sMessage: str, oMeta=None):
 
@@ -312,7 +312,7 @@ class Logger:
 
     if self.console:
       oMessage['--sn'] = self.severity_strings[iSeverity]
-      sMessage = '@cee:' + json.dumps(oMessage,sort_keys=True,separators=(',', ': '))
+      sMessage = json.dumps(oMessage,sort_keys=True,separators=(',', ': '))
       iLoggingSeverity = SYSLOG_TO_LOGGING_SEVERITY[iSeverity]
       self.logger.log(iLoggingSeverity,sMessage)
 
