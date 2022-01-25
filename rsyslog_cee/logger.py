@@ -100,6 +100,8 @@ class Logger:
     self.handler = logging.StreamHandler(sys.stdout)
     self.handler.setLevel(logging.DEBUG)
     self.logger.addHandler(self.handler)
+    self.logger.propagate = False
+
     # self.logger.debug('test debug')
     # self.logger.info('test info')
     # self.logger.warning('test warning')
@@ -295,6 +297,7 @@ class Logger:
     self.handler = logging.StreamHandler(sys.stdout)
     self.handler.setLevel(iSeverity)
     self.logger.addHandler(self.handler)
+    self.logger.propagate = False
     # self.logger.debug('test debug')
     # self.logger.info('test info')
     # self.logger.warning('test warning')
